@@ -1,0 +1,49 @@
+version: "3.8"
+services:
+  api_app:
+    build:
+      context: .
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - api_db
+    working_dir: /usr/src/app
+    environment:
+      SERVICE_NAME: api_app
+      DB_CONNECTION: sqlite
+      DB_DRIVER: sqlite
+      DB_HOST: api_db
+      DB_PORT: 3306
+    networks:
+      - app_network
+
+  api_nginx:
+    build:
+      context: ./docker-nginx/. 
+    volumes:
+    - "./public:/usr/src/app/public"
+    environment:
+      NGINX_FPM_HOST: api_app
+      NGINX_ROOT: /usr/src/app/public
+    ports:
+      - "8000:80"
+    depends_on:
+      - api_app
+    networks:
+      - app_network
+
+  api_db:
+    image: sqlite3:latest
+    restart: always
+    environment:
+      ENV_DATABASE: database
+    ports:
+      - "3306:3306"
+    volumes:
+      - "./storage/db-data:/var/lib/sqlite"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
